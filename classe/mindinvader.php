@@ -22,22 +22,17 @@ class CSettings {
 }
 
 class CMindInvader {	
-	private $_sClientKey;	
-	private $_sSiteId;	
-	private $_sUrl;
-	private $_aUrl;
-	private $_sDbug;
-	private $_sFunction;
-	public $sPayService;	
 
 	public function __construct() {
 		$this->_sDbug ='';
 		$this->_sFunction = 'visit';
-		if(MVR_CLIENT_ID==0
-		|| MVR_CLIENT_KEY=='')
-			return;
 		$this->_nClientId = MVR_CLIENT_ID;
-		$this->_sClientKey = MVR_CLIENT_KEY;
+		if(!defined(MVR_CLIENT_KEY))
+			$this->_sSiteKey = MVR_SITE_KEY;
+		else
+			$this->_sSiteKey = MVR_CLIENT_KEY;
+		if(empty($this->_nClientId) || empty($this->_sSiteKey))
+			return;
 		$this->_sUrl = 'http';
 		if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') 
 			$this->_sUrl = 'https';	
@@ -225,6 +220,10 @@ class CMindInvader {
 		$this->_sFunction = 'transaction';
 		$this->_sendTransaction($aCaisse, $aCustomer, $aPanier);
 	}
+	public function sendOrderValid($aCaisse, $aCustomer=array(), $aPanier=array()) {
+		$this->_sFunction = 'ordervalid';
+		$this->_sendTransaction($aCaisse, $aCustomer, $aPanier);
+	}
 
 	public function sendRefund($aCaisse, $aCustomer=array(), $aPanier=array()) {
 		$this->_sFunction = 'refund';
@@ -274,7 +273,7 @@ class CMindInvader {
 	 *                                  FONCTIONS PRIVEES
 	 ****************************************************************************************************/ 
 
-	private function _sendTransaction($aCaisse, $aCustomer, $aPanier) {
+	protected function _sendTransaction($aCaisse, $aCustomer, $aPanier) {
 		if(!empty($aCustomer) && empty($aPanier))
 			if(!empty($aCustomer['articleID'])) { // on a pas passé $aCustomer mais $aPanier
 				$aPanier = $aCustomer;
@@ -291,7 +290,7 @@ class CMindInvader {
 	/* Tracking lors du surf du visiteur, envois les données et reçoit en retour les instructions
 	 * pour mise à jour de cookies, et affichages eventuels interprétés par _callBack
 	 */ 
-	private function _HttpTracker($sQuery='type==visit') {
+	protected function _HttpTracker($sQuery='type==visit') {
 		if(empty($_COOKIE[MVR_COOKIE_NAME .'-session']) || $this->_sFunction != 'visit') {
 			$sUrl = URL_MINDINVADER_API .'?'.$sQuery.'|'.$this->_MakeInput().'|version==1.5';
 			$this->_sDbug .= '<div class="dbug section action">Query sent to MindIvader => </div><div class="dbug">'.$sUrl.'</div>';
@@ -306,7 +305,7 @@ class CMindInvader {
 
 	/* Transmet des données à MindInvader en POST
 	 */	
-	private function _HttpPost($aPost=array()) {
+	protected function _HttpPost($aPost=array()) {
 		$sQuery = 'type=='.$this->_sFunction;
 		if(!empty($aPost)) 
 			foreach($aPost as $key=>$value) {
@@ -328,12 +327,14 @@ class CMindInvader {
 		$this->_sDbug = '<div class="dbug section action">Query sent to MindIvader => </div><div class="dbug body">'.$sUrl.'
 		POST DATA: <pre>'.var_export($aPost,true).'</pre></div>';
 		$ch = curl_init($sUrl);
+//		print_r($aPost);
 		if(!empty($aPost)) {	
 			curl_setopt($ch, CURLOPT_POST, TRUE);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $aPost);
 		}
 		curl_setopt($ch,CURLOPT_RETURNTRANSFER,TRUE);
 		$sJson = curl_exec($ch);
+		//print_r($sJson);
 		$oMvr = json_decode($sJson);
 		if(empty($oMvr)) echo $sJson;
 		$this->_callBack($oMvr);
@@ -342,10 +343,10 @@ class CMindInvader {
 	/* creer la chaine des informations qui permet l'identification du client
 	 * et éventuellement les paramêtres du visiteur cookie, agent, ip, referer
 	 */
-	private function _MakeInput($bAdmin=false) {
+	protected function _MakeInput($bAdmin=false) {
 		$str = 'MVR_clid=='.$this->_nClientId;
 		$str .= '|call_type==server';
-		$str .= '|MVR_key=='.$this->_sClientKey;
+		$str .= '|MVR_key=='.$this->_sSiteKey;
 		$str .= '|URI=='.urlencode($this->_sUrl);
 		if(isset($_GET['MVR_dbug']))
 			if(strpos($this->_sUrl,'?') !==false)
@@ -366,7 +367,7 @@ class CMindInvader {
 	
 	/* Efface le cookie MindInvader
 	 */
-	private function _deleteCook() {
+	protected function _deleteCook() {
 		setcookie(MVR_COOKIE_NAME,0);
 	} 
 
@@ -376,9 +377,9 @@ class CMindInvader {
 	 * Génère l'affichage de la plateforme d'affiliation
 	 */
 
-	private function _callBack($oMvr=null) {
+	protected function _callBack($oMvr=null) {
 		$bDbugMode = false;
-		if(!empty($this->_sDbug) && isset($_GET['MVR_dbug']) && $_GET['MVR_dbug'] == $this->_sClientKey)
+		if(!empty($this->_sDbug) && isset($_GET['MVR_dbug']) && $_GET['MVR_dbug'] == $this->_sSiteKey)
 			$bDbugMode = true;
 
 		if(!empty($oMvr->error) && !$bDbugMode)
@@ -456,7 +457,7 @@ class CMindInvader {
 
 	/* Transforme un tableau multidimmensionnel en un tableau à une dimension
 	 */	
-	private function _flatten_GP_array(array $var,$prefix = false) {
+	protected function _flatten_GP_array(array $var,$prefix = false) {
 		$return = array();
 		foreach($var as $idx => $value) {
 			if(!is_array($value)) {
@@ -470,7 +471,7 @@ class CMindInvader {
 		return $return;
 	}
 
-	private function _echoDBug() {
+	protected function _echoDBug() {
 	echo '<style>	.dbug{padding:5px; font-family: "monospace","sans-serif"; font-size: 80%;  padding:2px;}
 					.section{background-color:#000B2C;}
 					.body{margin-bottom:10px; background-color:#F1F1F1;}
