@@ -52,7 +52,8 @@ class CMindInvader {
 		} else {	
 			if(!empty($_GET[CBM_RETURN_FIELD])) // case cybermailing return
 				$this->_cybermailingLanding();
-			$this->_HttpTracker(); // case visit
+			else
+				$this->_HttpTracker(); // case visit
 		}
 	}
 
