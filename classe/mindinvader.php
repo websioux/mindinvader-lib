@@ -98,7 +98,7 @@ class CMindInvader {
 
 	public function sendGoal($nId) {
 			$this->_sFunction = 'goal';
-			$sQuery = 'type=='.$this->_sFunction .'|goalId='.$nId;
+			$sQuery = 'type=='.$this->_sFunction .'|MVR_goal_id='.$nId;
 			$this->_HttpTracker($sQuery);	
 	}	
 
