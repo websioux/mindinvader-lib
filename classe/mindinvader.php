@@ -27,10 +27,7 @@ class CMindInvader {
 		$this->_sDbug ='';
 		$this->_sFunction = 'visit';
 		$this->_nClientId = MVR_CLIENT_ID;
-		if(!defined(MVR_CLIENT_KEY))
-			$this->_sSiteKey = MVR_SITE_KEY;
-		else
-			$this->_sSiteKey = MVR_CLIENT_KEY;
+		$this->_sSiteKey = MVR_SITE_KEY;
 		if(empty($this->_nClientId) || empty($this->_sSiteKey))
 			return;
 		$this->_sUrl = 'http';
@@ -51,7 +48,7 @@ class CMindInvader {
 			$oTrans->actions();
 		} else {	
 			if(!empty($_GET[CBM_RETURN_FIELD])) // case cybermailing return
-				$this->_cybermailingLanding();
+				$this->cybermailingLanding();
 			else
 				$this->_HttpTracker(); // case visit
 		}
@@ -98,7 +95,7 @@ class CMindInvader {
 
 	public function sendGoal($nId) {
 			$this->_sFunction = 'goal';
-			$sQuery = 'type=='.$this->_sFunction .'|MVR_goal_id='.$nId;
+			$sQuery = 'type=='.$this->_sFunction .'|MVR_goal_id=='.$nId;
 			$this->_HttpTracker($sQuery);	
 	}	
 
