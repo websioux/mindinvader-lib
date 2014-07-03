@@ -47,7 +47,7 @@ class CMindInvader {
 			$oTrans = new CMVRTransaction($this);
 			$oTrans->actions();
 		} else {	
-			if(!empty($_GET[CBM_RETURN_FIELD])) // case cybermailing return
+			if(!empty($_GET[CBM_RETURN_FIELD])) // case cybermailing return subscribe
 				$this->cybermailingLanding();
 			else
 				$this->_HttpTracker(); // case visit
